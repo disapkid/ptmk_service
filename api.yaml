@@ -1,0 +1,232 @@
+openapi: 3.0.3
+info:
+  title: Document Service API
+  version: 1.0.0
+
+paths:
+  /documents:
+    post:
+      summary: Save parsed document
+      operationId: createDocument
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '400':
+          description: Bad request
+        '500':
+          description: Internal error
+
+    get:
+      summary: Get user documents
+      operationId: listDocuments
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+
+        - name: sort
+          in: query
+          required: true
+          description: Free-form sort expression (handled in service)
+          schema:
+            type: string
+            example: "date_created desc"
+
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+      responses:
+        '200':
+          description: Documents list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - documents
+                properties:
+                  total:
+                    type: integer
+                  documents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DocumentResponse'
+        '400':
+          description: Bad request
+        '500':
+          description: Internal error
+
+  /documents/{id}:
+    get:
+      summary: Get document by ID
+      operationId: getDocumentByID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '404':
+          description: Not found
+        '500':
+          description: Internal error
+
+  /documents/by-number/{document_number}:
+    delete:
+      summary: Delete document by number
+      operationId: deleteDocumentByNumber
+      parameters:
+        - name: document_number
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
+        '500':
+          description: Internal error
+
+components:
+  schemas:
+
+    DocumentCreateRequest:
+      type: object
+      required:
+        - user_id
+        - document_type
+        - document_number
+        - date_created
+        - persons
+      properties:
+        user_id:
+          type: integer
+          format: int64
+
+        document_type:
+          type: string
+
+        document_number:
+          type: string
+
+        date_created:
+          type: string
+          format: date
+
+        date_end:
+          type: string
+          format: date
+          nullable: true
+
+        persons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+
+    DocumentResponse:
+      type: object
+      required:
+        - user_id
+        - document_type
+        - document_number
+        - date_created
+      properties:
+        user_id:
+          type: integer
+          format: int64
+
+        document_type:
+          type: string
+
+        document_number:
+          type: string
+
+        date_created:
+          type: string
+          format: date
+
+        date_end:
+          type: string
+          format: date
+          nullable: true
+
+        persons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+
+    Person:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - LEGAL_ENTITY
+            - NATURAL_PERSON
+
+        legal_entity:
+          $ref: '#/components/schemas/LegalEntity'
+          nullable: true
+
+        natural_person:
+          $ref: '#/components/schemas/NaturalPerson'
+          nullable: true
+
+    LegalEntity:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        entity_type:
+          type: string
+
+    NaturalPerson:
+      type: object
+      properties:
+        first_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
+        middle_name:
+          type: string
+          nullable: true
+        initials:
+          type: string
+          nullable: true

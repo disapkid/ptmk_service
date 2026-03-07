@@ -1,0 +1,29 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors/IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment/local config
+.env
+.env.*
+
+# Logs
+*.log
+
+# Build artifacts
+bin/
+dist/
+tmp/
+
+# Go artifacts
+*.test
+*.out
+coverage.out
+
+# Local test artifacts
+test_results/

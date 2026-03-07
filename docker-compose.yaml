@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ptmk-postgres
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_USER: ptmk
+      POSTGRES_PASSWORD: "123"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ptmk -d db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ptmk-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://ptmk:123@postgres:5432/db?sslmode=disable
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
