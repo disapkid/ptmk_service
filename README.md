@@ -38,8 +38,9 @@ http://localhost:8080
 
 Important details:
 - Postgres is started as `ptmk-postgres`.
-- Migrations are mounted to `/docker-entrypoint-initdb.d` and run automatically only on first DB initialization (empty volume).
-- If migration files changed and volume already exists, recreate DB volume:
+- SQL migrations are applied by the one-shot `ptmk-goose` service after Postgres becomes healthy.
+- The app starts only after `goose` finishes successfully.
+- New migration files are applied on the next `docker compose up --build`; recreating the DB volume is only needed when you intentionally want a clean database:
 
 ```bash
 docker compose down -v
@@ -48,10 +49,10 @@ docker compose up --build
 
 ## Run Locally (without app container)
 
-1. Start only Postgres:
+1. Start Postgres and apply migrations:
 
 ```bash
-docker compose up -d postgres
+docker compose up -d postgres goose
 ```
 
 2. Export `DATABASE_URL`:
@@ -88,6 +89,7 @@ OpenAPI spec: [`api.yaml`](api.yaml)
 ## Request/Response Notes
 
 - Dates use OpenAPI `format: date` (`YYYY-MM-DD`).
+- `user_id` is supplied by the caller. This service stores it with the document and does not create or own users.
 - `persons[].type` supports:
   - `LEGAL_ENTITY`
   - `NATURAL_PERSON`
@@ -205,11 +207,11 @@ curl -X DELETE 'http://localhost:8080/documents/by-number/AB-123456' -i
 ## Database
 
 Main tables:
-- `users`
 - `documents`
 - `doc_parties`
 
 Current important migration details:
+- `documents.user_id` is stored as `BIGINT NOT NULL` without a foreign key to a local `users` table.
 - `documents.doc_number` column exists.
 - `doc_parties.doc_id -> documents.id` foreign key has `ON DELETE CASCADE` (migration `20260307170024_added_delete_on_cascade.sql`).
 
