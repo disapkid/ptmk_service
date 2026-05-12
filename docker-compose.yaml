@@ -8,12 +8,24 @@ services:
       POSTGRES_PASSWORD: "123"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ptmk -d db"]
       interval: 5s
       timeout: 3s
       retries: 10
+
+  goose:
+    image: ghcr.io/kukymbr/goose-docker:3.27.1
+    container_name: ptmk-goose
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: postgres://ptmk:123@postgres:5432/db?sslmode=disable
+      GOOSE_MIGRATION_DIR: /migrations
+    volumes:
+      - ./migrations:/migrations:ro
 
   app:
     build:
@@ -21,8 +33,8 @@ services:
       dockerfile: Dockerfile
     container_name: ptmk-service
     depends_on:
-      postgres:
-        condition: service_healthy
+      goose:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: postgres://ptmk:123@postgres:5432/db?sslmode=disable
     ports:
